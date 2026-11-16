@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-col_titulo, col_img = st.columns([5, 1])
+col_titulo, col_img = st.columns([3, 2], vertical_alignment="center")
 
 with col_titulo:
     st.title("📊 Explorar los datos")
     st.markdown("Carga el archivo preparado para analizar la evolución diaria, el comportamiento por día de la semana y descargar registros filtrados.")
 
 with col_img:
-    st.image("bici.jpg", width=110)
+    st.image("bici.jpg", width=260)
 
 # Sección de carga en contenedor con borde (R1)
 with st.container(border=True):
