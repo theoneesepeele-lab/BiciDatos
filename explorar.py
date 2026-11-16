@@ -1,8 +1,14 @@
 import streamlit as st
 import pandas as pd
 
-st.title("📊 Explorar los datos")
-st.markdown("Carga el archivo preparado para analizar la evolución diaria, el comportamiento por día de la semana y descargar registros filtrados.")
+col_titulo, col_img = st.columns([5, 1])
+
+with col_titulo:
+    st.title("📊 Explorar los datos")
+    st.markdown("Carga el archivo preparado para analizar la evolución diaria, el comportamiento por día de la semana y descargar registros filtrados.")
+
+with col_img:
+    st.image("bici.jpg", width=110)
 
 # Sección de carga en contenedor con borde (R1)
 with st.container(border=True):
