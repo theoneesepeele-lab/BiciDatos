@@ -1,57 +1,61 @@
-import matplotlib.pyplot as plt
-import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="Ventas de autos", page_icon="🚗")
-st.title("🚗 Ventas de autos por color")
-
-
-@st.cache_data
-def cargar_datos() -> pd.DataFrame:
-    return pd.read_csv("ventas.csv", sep=";", parse_dates=["fecha"])
-
-
-df = cargar_datos()
-
-# --- Filtros en la barra lateral ---
-st.sidebar.header("Filtros")
-colores = st.sidebar.multiselect(
-    "Colores", sorted(df["color"].unique()), default=sorted(df["color"].unique())
-)
-anios = st.sidebar.multiselect(
-    "Años", sorted(df["fecha"].dt.year.unique()), default=sorted(df["fecha"].dt.year.unique())
+st.set_page_config(
+    page_title="BiciDatos | Análisis de Alquileres",
+    page_icon="🚲",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-filtrado = df[df["color"].isin(colores) & df["fecha"].dt.year.isin(anios)]
+# Inicializar variables de estado compartido (R1, R2, R3)
+if "df" not in st.session_state:
+    st.session_state["df"] = None
+if "tipo_usuario" not in st.session_state:
+    st.session_state["tipo_usuario"] = "Todos"
+if "tipo_dia" not in st.session_state:
+    st.session_state["tipo_dia"] = "Todos"
+if "horas" not in st.session_state:
+    st.session_state["horas"] = (0, 23)
 
-if filtrado.empty:
-    st.warning("Selecciona al menos un color y un año.")
-    st.stop()
+# Barra lateral estilizada con los 3 filtros compartidos (R3)
+with st.sidebar:
+    st.markdown("## 🚲 BiciDatos")
+    st.caption("Panel de exploración de demanda horaria (Capital Bikeshare 2011–2012)")
+    st.divider()
+    
+    st.subheader("Filtros globales")
+    
+    st.session_state["tipo_usuario"] = st.selectbox(
+        "Tipo de usuario",
+        options=["Todos", "Ocasionales", "Registrados"],
+        index=["Todos", "Ocasionales", "Registrados"].index(st.session_state["tipo_usuario"]),
+        help="Selecciona el segmento de usuarios para recalcular métricas y gráficos."
+    )
+    
+    st.session_state["tipo_dia"] = st.radio(
+        "Tipo de día",
+        options=["Todos", "Laborable", "No laborable"],
+        index=["Todos", "Laborable", "No laborable"].index(st.session_state["tipo_dia"]),
+        help="Filtra por jornadas laborales o fines de semana/feriados."
+    )
+    
+    st.session_state["horas"] = st.slider(
+        "Horas del día",
+        min_value=0,
+        max_value=23,
+        value=st.session_state["horas"],
+        help="Selecciona el rango horario (extremos incluidos)."
+    )
+    
+    st.divider()
+    if st.session_state["df"] is not None:
+        st.success(f"Base activa: {len(st.session_state['df']):,} registros".replace(",", "."))
+    else:
+        st.warning("Base de datos pendiente de carga")
 
-# --- Métricas ---
-col1, col2 = st.columns(2)
-col1.metric("Total de autos vendidos", f"{filtrado['unidades'].sum():,}")
-col2.metric(
-    "Color más vendido", filtrado.groupby("color")["unidades"].sum().idxmax()
-)
+# Configuración de navegación multipágina (R2)
+pag_explorar = st.Page("explorar.py", title="Explorar los datos", icon="📊", default=True)
+pag_comparar = st.Page("comparar.py", title="Comparar horarios", icon="⏰")
 
-# --- Gráfico 1: ventas por color ---
-st.subheader("Ventas totales por color")
-por_color = filtrado.groupby("color")["unidades"].sum().sort_values(ascending=False)
-fig1, ax1 = plt.subplots()
-ax1.bar(por_color.index, por_color.values, color="steelblue")
-ax1.set_ylabel("Unidades")
-st.pyplot(fig1)
-
-# --- Gráfico 2: evolución mensual ---
-st.subheader("Evolución mensual")
-pivot = filtrado.pivot_table(index="fecha", columns="color", values="unidades", aggfunc="sum")
-fig2, ax2 = plt.subplots()
-pivot.plot(ax=ax2, marker="o")
-ax2.set_ylabel("Unidades")
-ax2.set_xlabel("")
-st.pyplot(fig2)
-
-# --- Tabla de datos ---
-with st.expander("Ver datos"):
-    st.dataframe(filtrado)
+pg = st.navigation([pag_explorar, pag_comparar])
+pg.run()
